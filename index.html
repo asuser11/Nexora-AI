@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexora AI</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #10121c;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+header {
+    padding: 20px;
+    text-align: center;
+    background: #191d2e;
+    border-bottom: 1px solid #353b50;
+}
+
+header h1 {
+    margin: 0;
+    color: #65d9ff;
+}
+
+header p {
+    color: #b6bfd4;
+}
+
+main {
+    max-width: 650px;
+    margin: auto;
+    padding: 16px;
+}
+
+#status {
+    color: #65d9ff;
+    margin-bottom: 12px;
+}
+
+#chat {
+    height: 48vh;
+    overflow-y: auto;
+    padding: 12px;
+    background: #191d2b;
+    border-radius: 12px;
+}
+
+.message {
+    margin: 10px 0;
+    padding: 12px;
+    border-radius: 10px;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.user {
+    background: #214d68;
+}
+
+.ai {
+    background: #303447;
+}
+
+.controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+input, select, button {
+    font-size: 16px;
+    padding: 12px;
+    border-radius: 9px;
+    border: 1px solid #444b63;
+}
+
+input, select {
+    background: #202538;
+    color: white;
+}
+
+input {
+    width: 100%;
+    min-width: 0;
+}
+
+button {
+    background: #087fc0;
+    color: white;
+    cursor: pointer;
+}
+
+#send {
+    flex-shrink: 0;
+}
+
+#agent {
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+#mic {
+    width: 100%;
+    margin-top: 12px;
+    background: #176b53;
+}
+
+small {
+    display: block;
+    color: #aeb7cb;
+    margin-top: 14px;
+    line-height: 1.5;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🤖 Nexora AI</h1>
+    <p>Your Personal Voice Assistant</p>
+</header>
+
+<main>
+
+    <div id="status">तैयार हूँ। अपना निर्देश दें।</div>
+
+    <select id="agent">
+        <option value="normal">Normal Assistant</option>
+        <option value="coder">Expert Coder</option>
+        <option value="writer">Creative Writer</option>
+        <option value="research">Research Assistant</option>
+        <option value="automation">Automation Assistant</option>
+    </select>
+
+    <div id="chat" aria-live="polite"></div>
+
+    <div class="controls">
+        <input
+            id="prompt"
+            placeholder="यहाँ लिखें या बोलें..."
+            autocomplete="off"
+        >
+        <button id="send">Send</button>
+    </div>
+
+    <button id="mic">🎙️ बोलकर निर्देश दें</button>
+
+    <small>
+        यह शुरुआती संस्करण बिना AI API Key के चलता है।
+        वॉइस रिकग्निशन ब्राउज़र और इंटरनेट पर निर्भर हो सकता है।
+        यह अभी सामान्य AI चैट मॉडल नहीं है।
+    </small>
+
+</main>
+
+<script>
+const chat = document.getElementById("chat");
+const promptInput = document.getElementById("prompt");
+const statusBox = document.getElementById("status");
+const agentSelect = document.getElementById("agent");
+
+function addMessage(text, type) {
+    const div = document.createElement("div");
+    div.className = "message " + type;
+
+    // User text is inserted as text, not executable HTML.
+    div.textContent = text;
+
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function speak(text) {
+    if (!("speechSynthesis" in window)) return;
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "hi-IN";
+
+    window.speechSynthesis.speak(utterance);
+}
+
+function reply(text) {
+    addMessage("Nexora: " + text, "ai");
+    speak(text);
+}
+
+function handleCommand(rawText) {
+    const text = rawText.trim();
+    const lower = text.toLowerCase();
+
+    if (!text) return;
+
+    addMessage("आप: " + text, "user");
+
+    const agent = agentSelect.value;
+
+    // Basic offline command handling.
+    if (
+        lower.includes("नमस्ते") ||
+        lower.includes("hello") ||
+        lower.includes("हेलो")
+    ) {
+        reply("नमस्ते! मैं Nexora हूँ। बताइए, क्या करना है?");
+    }
+
+    else if (
+        lower.includes("समय बताओ") ||
+        lower.includes("what time")
+    ) {
+        reply("अभी का समय " +
+            new Date().toLocaleTimeString("hi-IN") + " है।");
+    }
+
+    else if (
+        lower.includes("तारीख बताओ") ||
+        lower.includes("आज की तारीख")
+    ) {
+        reply("आज की तारीख " +
+            new Date().toLocaleDateString("hi-IN") + " है।");
+    }
+
+    else if (
+        lower.includes("यूट्यूब खोलो") ||
+        lower.includes("open youtube")
+    ) {
+        reply("YouTube खोल रहा हूँ।");
+        window.open("https://www.youtube.com/", "_blank");
+    }
+
+    else if (
+        lower.includes("गूगल खोलो") ||
+        lower.includes("open google")
+    ) {
+        reply("Google खोल रहा हूँ।");
+        window.open("https://www.google.com/", "_blank");
+    }
+
+    else if (
+        lower.includes("खोजो ") ||
+        lower.includes("सर्च करो ")
+    ) {
+        const query = text
+            .replace(/खोजो/gi, "")
+            .replace(/सर्च करो/gi, "")
+            .trim();
+
+        if (query) {
+            reply("आपकी खोज खोल रहा हूँ।");
+            window.open(
+                "https://www.google.com/search?q=" +
+                encodeURIComponent(query),
+                "_blank"
+            );
+        } else {
+            reply("बताइए क्या खोजना है?");
+        }
+    }
+
+    else if (agent === "coder") {
+        reply(
+            "Expert Coder चुना गया है। " +
+            "मैं अभी बेसिक कमांड मोड में हूँ। " +
+            "AI आधारित कोड जनरेशन के लिए लोकल AI मॉडल जोड़ना होगा।"
+        );
+    }
+
+    else if (agent === "writer") {
+        reply(
+            "Creative Writer चुना गया है। " +
+            "अगले चरण में हम स्क्रिप्ट और कहानी बनाने की सुविधा जोड़ेंगे।"
+        );
+    }
+
+    else if (agent === "research") {
+        reply(
+            "Research Assistant चुना गया है। " +
+            "इंटरनेट रिसर्च के लिए अभी Google Search खोल सकते हैं।"
+        );
+    }
+
+    else if (agent === "automation") {
+        reply(
+            "Automation Assistant चुना गया है। " +
+            "मैं अभी सीमित कमांड चला सकता हूँ। " +
+            "दूसरे ऐप्स को नियंत्रित करने के लिए Android ऐप और अनुमतियाँ चाहिए।"
+        );
+    }
+
+    else {
+        reply(
+            "मैंने आपका निर्देश सुना। " +
+            "इस शुरुआती संस्करण में यह कमांड उपलब्ध नहीं है। " +
+            "आप Google Search खोलकर जानकारी खोज सकते हैं।"
+        );
+    }
+}
+
+document.getElementById("send").addEventListener("click", () => {
+    const text = promptInput.value;
+    promptInput.value = "";
+    handleCommand(text);
+});
+
+promptInput.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+        document.getElementById("send").click();
+    }
+});
+
+document.getElementById("mic").addEventListener("click", () => {
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        statusBox.textContent =
+            "इस ब्राउज़र में Speech Recognition उपलब्ध नहीं है।";
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = "hi-IN";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    statusBox.textContent = "सुन रहा हूँ...";
+
+    recognition.onresult = event => {
+        const transcript =
+            event.results[0][0].transcript;
+
+        statusBox.textContent = "निर्देश पहचाना गया।";
+        handleCommand(transcript);
+    };
+
+    recognition.onerror = event => {
+        statusBox.textContent =
+            "Voice error: " + event.error;
+    };
+
+    recognition.onend = () => {
+        if (statusBox.textContent === "सुन रहा हूँ...") {
+            statusBox.textContent = "तैयार हूँ।";
+        }
+    };
+
+    recognition.start();
+});
+</script>
+
+</body>
+</html>
